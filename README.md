@@ -22,7 +22,7 @@ $ abigen --bin=build/Storage.bin --abi=build/Storage.abi --pkg=storage --out=gen
 $ go mod tidy
 ```
 
-## Deploy contract to local testnet
+## Deploy contract to testnet
 
 ### Create .env file in root directory
 
@@ -41,4 +41,16 @@ $ go run ./cmd/deploy/
 2023/11/05 20:15:34 Chain ID: 80001
 2023/11/05 20:15:34 Contract deployed! Transaction hash: 0x5b2cba1c0022c76809edb01e9555d40a597fe12d1d0c6d4f0bbd280a4e859a6b
 2023/11/05 20:15:34 Contract address: 0xbE7F4aC08B6B58fD4d7085a9AE1811EF1eae1EB4
+```
+
+## Interact with contract
+
+```bash
+$ go run ./cmd/interact/
+2023/11/05 20:36:14 Successfully connected to Ethereum client
+2023/11/05 20:36:15 Suggested gas price: 2500000029
+2023/11/05 20:36:15 Chain ID: 80001
+2023/11/05 20:36:16 Transaction hash: 0xb77a87a8cf633c756073a1c988106dd7e8b6595440a8ff91fcab547d16d36441
+2023/11/05 20:36:26 Transaction receipt: 0xb77a87a8cf633c756073a1c988106dd7e8b6595440a8ff91fcab547d16d36441
+2023/11/05 20:36:26 Retrieved value: 20
 ```
