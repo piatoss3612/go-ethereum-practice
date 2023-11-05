@@ -9,6 +9,8 @@ $ solc --bin --abi contracts/Storage.sol -o build
 Compiler run successful. Artifact(s) can be found in directory "build".
 ```
 
+> binary file is required to deploy contract, if you don't want to deploy contract, you can ignore --bin option
+
 ### Generate go file from abi
 
 ```bash

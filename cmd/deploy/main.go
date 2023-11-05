@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+	// Connect to Ethereum client with RPC endpoint
 	client, err := ethclient.Dial(os.Getenv("RPC_ENDPOINT"))
 	if err != nil {
 		log.Fatal(err)
@@ -24,12 +25,14 @@ func main() {
 
 	log.Println("Successfully connected to Ethereum client")
 
+	// Parse wallet private key
 	privateKey := parsePrivateKey()
 
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	log.Printf("Deploying contract from address %s", address.Hex())
 
+	// Get nonce, gas price and chain ID
 	nonce, err := client.PendingNonceAt(context.Background(), address)
 	if err != nil {
 		log.Fatal(err)
@@ -49,6 +52,7 @@ func main() {
 
 	log.Printf("Chain ID: %d", chainID)
 
+	// Create an transactor with the private key, chain ID and nonce
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
 		log.Fatal(err)
@@ -58,6 +62,7 @@ func main() {
 	auth.GasLimit = 3000000
 	auth.Nonce = big.NewInt(int64(nonce))
 
+	// Deploy the contract
 	contractAddress, tx, _, err := storage.DeployStorage(auth, client)
 	if err != nil {
 		log.Fatal(err)
@@ -70,6 +75,7 @@ func main() {
 func parsePrivateKey() *ecdsa.PrivateKey {
 	rawPrivateKey := os.Getenv("PRIVATE_KEY")
 
+	// Parse the private key
 	privateKey, err := crypto.HexToECDSA(rawPrivateKey)
 	if err != nil {
 		log.Fatal(err)
