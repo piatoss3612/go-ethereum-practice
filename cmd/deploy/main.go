@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
-	storage "go-ethereum-example/gen"
-	"log"
+	"fmt"
+	token "go-ethereum-example/gen"
 	"math/big"
 	"os"
 
@@ -16,70 +16,73 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Connect to Ethereum client with RPC endpoint
-	client, err := ethclient.Dial(os.Getenv("RPC_ENDPOINT"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	client, err := ethclient.DialContext(ctx, os.Getenv("RPC_ENDPOINT"))
+	handleError(err)
+
 	defer client.Close()
 
-	log.Println("Successfully connected to Ethereum client")
+	fmt.Println("Successfully connected to Ethereum client")
 
 	// Parse wallet private key
-	privateKey := parsePrivateKey()
+	privateKey := mustParsePrivateKey()
 
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
-	log.Printf("Deploying contract from address %s", address.Hex())
+	fmt.Printf("Deploying contract from address %s\n", address.Hex())
 
-	// Get nonce, gas price and chain ID
-	nonce, err := client.PendingNonceAt(context.Background(), address)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Get nonce, gas price and chain ID from the Ethereum client
+	nonce, err := client.PendingNonceAt(ctx, address)
+	handleError(err)
 
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
+	gasPrice, err := client.SuggestGasPrice(ctx)
+	handleError(err)
 
-	log.Printf("Suggested gas price: %s", gasPrice)
+	fmt.Printf("Suggested gas price: %s\n", gasPrice)
 
-	chainID, err := client.NetworkID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
+	chainID, err := client.NetworkID(ctx)
+	handleError(err)
 
-	log.Printf("Chain ID: %d", chainID)
+	fmt.Printf("Chain ID: %d\n", chainID)
 
-	// Create an transactor with the private key, chain ID and nonce
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Create an signer with the private key, chain ID and nonce
+	signer, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	handleError(err)
 
-	auth.GasPrice = gasPrice
-	auth.GasLimit = 3000000
-	auth.Nonce = big.NewInt(int64(nonce))
+	signer.GasPrice = gasPrice
+	signer.GasLimit = 3000000
+	signer.Nonce = big.NewInt(int64(nonce))
 
-	// Deploy the contract
-	contractAddress, tx, _, err := storage.DeployStorage(auth, client)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Deploy the contract with initial supply of 1,000,000 tokens
+	initialSupply := big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 
-	log.Printf("Contract deployed! Transaction hash: %s", tx.Hash().Hex())
-	log.Printf("Contract address: %s", contractAddress.Hex())
+	_, tx, _, err := token.DeployToken(signer, client, initialSupply)
+	handleError(err)
+
+	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
+
+	// Wait for the deployment to be mined
+	contractAddress, err := bind.WaitDeployed(ctx, client, tx)
+	handleError(err)
+
+	fmt.Printf("Contract deployed! Contract address: %s\n", contractAddress.Hex())
 }
 
-func parsePrivateKey() *ecdsa.PrivateKey {
+func mustParsePrivateKey() *ecdsa.PrivateKey {
 	rawPrivateKey := os.Getenv("PRIVATE_KEY")
 
 	// Parse the private key
 	privateKey, err := crypto.HexToECDSA(rawPrivateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 
 	return privateKey
+}
+
+func handleError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
