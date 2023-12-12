@@ -1,0 +1,15 @@
+{
+  "name": "go-ethereum-practice",
+  "version": "1.0.0",
+  "description": "Generate go code from solidity file",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.1"
+  }
+}

@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
-	storage "go-ethereum-example/gen"
-	"log"
+	"fmt"
+	token "go-ethereum-example/gen"
 	"math/big"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -17,90 +18,112 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Connect to Ethereum client with RPC endpoint
-	client, err := ethclient.Dial(os.Getenv("RPC_ENDPOINT"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	client, err := ethclient.DialContext(ctx, os.Getenv("RPC_ENDPOINT"))
+	handleError(err)
+
 	defer client.Close()
 
-	log.Println("Successfully connected to Ethereum client")
+	fmt.Println("Successfully connected to Ethereum client")
 
-	contractAddress := common.HexToAddress("bE7F4aC08B6B58fD4d7085a9AE1811EF1eae1EB4")
+	// Change these addresses to match your contract!
+	contractAddress := common.HexToAddress("0x44f21c4a4dcC4A70De5450c2E2D4778c874F6507")
+	toAddress := common.HexToAddress("0x15a88243b4c61ef0071e3527b88873CAF4A334dD")
 
 	// Create an instance of the contract, specifying its address
-	storageInstance, err := storage.NewStorage(contractAddress, client)
-	if err != nil {
-		log.Fatal(err)
-	}
+	tokenInstance, err := token.NewToken(contractAddress, client)
+	handleError(err)
 
 	// Parse wallet private key
-	privateKey := parsePrivateKey()
+	privateKey := mustParsePrivateKey()
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	// Get nonce, gas price and chain ID
 	nonce, err := client.PendingNonceAt(context.Background(), address)
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 
-	log.Printf("Suggested gas price: %s", gasPrice)
+	fmt.Printf("Suggested gas price: %s\n", gasPrice)
 
 	chainID, err := client.NetworkID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 
-	log.Printf("Chain ID: %d", chainID)
+	fmt.Printf("Chain ID: %d\n", chainID)
 
 	// Create an transactor with the private key, chain ID and nonce
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
-	if err != nil {
-		log.Fatal(err)
-	}
+	signer, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	handleError(err)
 
-	auth.GasPrice = gasPrice
-	auth.GasLimit = 3000000
-	auth.Nonce = big.NewInt(int64(nonce))
+	signer.GasPrice = gasPrice
+	signer.GasLimit = 3000000
+	signer.Nonce = big.NewInt(int64(nonce))
 
-	// Call the contract method (state-changing)
-	tx, err := storageInstance.Store(auth, big.NewInt(20))
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Call transfer method (state-changing)
+	tx, err := tokenInstance.Transfer(signer, toAddress, big.NewInt(1000000))
+	handleError(err)
 
-	log.Printf("Transaction hash: %s", tx.Hash().Hex())
+	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
 
 	// Wait for the transaction to be mined
 	receipt, err := bind.WaitMined(context.Background(), client, tx)
-	if err != nil {
-		log.Fatal(err)
+	handleError(err)
+
+	fmt.Printf("Transaction receipt status %d\n", receipt.Status)
+
+	// If the transaction was reverted by the EVM, we can see the reason
+	if receipt.Status == 0 {
+		msg := ethereum.CallMsg{
+			From:     address,
+			To:       tx.To(),
+			Gas:      tx.Gas(),
+			GasPrice: tx.GasPrice(),
+			Value:    tx.Value(),
+			Data:     tx.Data(),
+		}
+
+		_, err = client.CallContract(ctx, msg, nil)
+		fmt.Printf("Transaction reverted: %v\n", err)
+		return
 	}
 
-	log.Printf("Transaction receipt: %s", receipt.TxHash.Hex())
+	// Extract the transfer event from the receipt
+	var transferred *token.TokenTransfer
+
+	for _, log := range receipt.Logs {
+		transferred, err = tokenInstance.ParseTransfer(*log)
+		if err == nil {
+			break
+		}
+	}
+
+	if transferred != nil {
+		fmt.Printf("Transferred %d tokens from %s to %s\n", transferred.Value, transferred.From.Hex(), transferred.To.Hex())
+	}
 
 	// Call the contract method (read-only)
-	retrieved, err := storageInstance.Retrieve(&bind.CallOpts{})
-	if err != nil {
-		log.Fatal(err)
-	}
+	toBalance, err := tokenInstance.BalanceOf(&bind.CallOpts{Context: ctx}, toAddress)
+	handleError(err)
 
-	log.Printf("Retrieved value: %d", retrieved)
+	fmt.Printf("To balance: %d\n", toBalance)
 }
 
-func parsePrivateKey() *ecdsa.PrivateKey {
+func mustParsePrivateKey() *ecdsa.PrivateKey {
 	rawPrivateKey := os.Getenv("PRIVATE_KEY")
 
 	// Parse the private key
 	privateKey, err := crypto.HexToECDSA(rawPrivateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 
 	return privateKey
+}
+
+func handleError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
