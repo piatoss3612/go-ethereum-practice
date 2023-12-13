@@ -17,6 +17,10 @@
 - [4. Interact with contract](#4-interact-with-contract)
     - [Set contract address and to address for transfer](#set-contract-address-and-to-address-for-transfer)
     - [Interact with contract](#interact-with-contract)
+- [5. Subscribe to events](#5-subscribe-to-events)
+    - [Subscribe to events](#subscribe-to-events)
+    - [Trigger event](#trigger-event)
+    - [Output](#output)
 
 ## 1. Generate Go code from solidity file
 
@@ -80,6 +84,7 @@ $ anvil
 ```.env
 PRIVATE_KEY=<FIRST_ACCOUNT_FROM_ANVIL> # Should not be 0x prefixed
 RPC_ENDPOINT=http://localhost:8545
+RPC_WS_ENDPOINT=ws://localhost:8545
 ```
 
 ### Deploy contract
@@ -115,4 +120,26 @@ Transaction hash: 0x8336dceaef677f437377c6c90caf4ba15c3851c8f386c060e386fab5f90d
 Transaction receipt status 1
 Transferred 1000000 tokens from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 To balance: 1000000
+```
+
+## 5. Subscribe to events
+
+### Subscribe to events
+
+```bash
+$ go run ./cmd/subscribe/
+Successfully connected to Ethereum client
+Successfully subscribed to Transfer events
+```
+
+### Trigger event
+
+```bash
+$ go run ./cmd/interact/
+```
+
+### Output
+
+```bash
+Transfer event received: from=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to=0x70997970C51812dc3A010C7d01b50e0d17dc79C8 value=1000000
 ```

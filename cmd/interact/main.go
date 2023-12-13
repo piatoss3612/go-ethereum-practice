@@ -30,8 +30,8 @@ func main() {
 	fmt.Println("Successfully connected to Ethereum client")
 
 	// Change these addresses to match your contract!
-	contractAddress := common.HexToAddress("0x44f21c4a4dcC4A70De5450c2E2D4778c874F6507")
-	toAddress := common.HexToAddress("0x15a88243b4c61ef0071e3527b88873CAF4A334dD")
+	contractAddress := common.HexToAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3")
+	toAddress := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
 
 	// Create an instance of the contract, specifying its address
 	tokenInstance, err := token.NewToken(contractAddress, client)
