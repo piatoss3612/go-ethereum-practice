@@ -21,6 +21,12 @@
     - [Subscribe to events](#subscribe-to-events)
     - [Trigger event](#trigger-event)
     - [Output](#output)
+- [6. Verify contract](#6-verify-contract)
+    - [Generate metadata from solidity file](#generate-metadata-from-solidity-file)
+    - [Generate standard json input file from metadata](#generate-standard-json-input-file-from-metadata)
+    - [Test standard json input file](#test-standard-json-input-file)
+    - [Update .env file](#update-env-file)
+    - [Verify contract](#verify-contract)
 
 ## 1. Generate Go code from solidity file
 
@@ -48,12 +54,13 @@ $ npm install
 ### Generate abi and binary from solidity file
 
 ```bash
-$ solc @openzeppelin/=$(pwd)/node_modules/@openzeppelin/ --optimize --abi --bin contracts/MyToken.sol -o build --overwrite
+$ solc @openzeppelin/=$(pwd)/node_modules/@openzeppelin/ --optimize --abi --bin --pretty-json contracts/MyToken.sol -o build --overwrite
 Compiler run successful. Artifact(s) can be found in directory "build".
 ```
 
 > binary file is required to deploy contract, if you don't want to deploy contract, you can ignore --bin option
 > --overwrite option is required to overwrite existing files (if needed)
+> --pretty-json is optional to generate pretty json file
 
 ### Generate go file from abi
 
@@ -142,4 +149,36 @@ $ go run ./cmd/interact/
 
 ```bash
 Transfer event received: from=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to=0x70997970C51812dc3A010C7d01b50e0d17dc79C8 value=1000000
+```
+
+## 6. Verify contract
+
+### Generate metadata from solidity file
+
+```bash
+$ solc @openzeppelin/=$(pwd)/node_modules/@openzeppelin/ --optimize --metadata --metadata-literal contracts/MyToken.sol -o build
+```
+
+### Generate standard json input file from metadata
+    
+```bash
+$ go run ./cmd/input
+```
+
+### Test standard json input file
+    
+```bash
+$ solc --standard-json ./verify/MyToken_input.json
+```
+
+### Update .env file
+
+```.env
+ETHERSCAN_API_KEY=<YOUR_ETHERSCAN_API_KEY>
+```
+
+### Verify contract
+
+```bash
+$ go run ./cmd/verify
 ```
