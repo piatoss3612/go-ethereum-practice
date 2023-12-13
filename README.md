@@ -26,7 +26,9 @@
     - [Generate standard json input file from metadata](#generate-standard-json-input-file-from-metadata)
     - [Test standard json input file](#test-standard-json-input-file)
     - [Update .env file](#update-env-file)
+    - [Check solc version](#check-solc-version)
     - [Verify contract](#verify-contract)
+    - [Check on polygonscan (mumbai testnet)](#check-on-polygonscan-mumbai-testnet)
 
 ## 1. Generate Go code from solidity file
 
@@ -177,8 +179,21 @@ $ solc --standard-json ./verify/MyToken_input.json
 ETHERSCAN_API_KEY=<YOUR_ETHERSCAN_API_KEY>
 ```
 
+### Check solc version
+
+```bash
+$ solc --version
+solc, the solidity compiler commandline interface
+Version: 0.8.22+commit.4fc1097e.Linux.g++
+```
+
 ### Verify contract
 
 ```bash
 $ go run ./cmd/verify
+{"status":"1","message":"OK","result":"vykmzujkyimxbzxn5cek1iyfmv8hj1hf2xdwxw4ephyk8maeyb"}
 ```
+
+### Check on polygonscan (mumbai testnet)
+
+- https://mumbai.polygonscan.com/address/0x7fc3c9ae336291ec87296bb10d4b03f7d23357e4#code
