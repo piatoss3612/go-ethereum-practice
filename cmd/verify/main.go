@@ -27,8 +27,6 @@ func main() {
 	sourceCodeBytes, err := io.ReadAll(f)
 	handleErr(err)
 
-	client := http.DefaultClient
-
 	// generate abi-encoded constructor arguments
 	initialSupply := big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 
@@ -69,6 +67,8 @@ func main() {
 
 	// set request headers
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := http.DefaultClient
 
 	// send request
 	resp, err := client.Do(req)

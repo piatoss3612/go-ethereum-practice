@@ -27,8 +27,6 @@ func main() {
 
 	var metadata map[string]interface{}
 
-	var standardJsonInput StandardJsonInput
-
 	err = json.NewDecoder(f).Decode(&metadata)
 	handleErr(err)
 
@@ -47,7 +45,7 @@ func main() {
 
 	delete(settings, "compilationTarget")
 
-	standardJsonInput = StandardJsonInput{
+	standardJsonInput := StandardJsonInput{
 		Language: metadata["language"],
 		Sources:  sources,
 		Settings: settings,
