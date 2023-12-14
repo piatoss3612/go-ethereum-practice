@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	token "go-ethereum-example/gen"
+	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 
@@ -17,7 +18,7 @@ func main() {
 	defer cancel()
 
 	// Connect to Ethereum client with RPC endpoint
-	client, err := ethclient.DialContext(ctx, "ws://localhost:8545")
+	client, err := ethclient.DialContext(ctx, os.Getenv("RPC_WS_ENDPOINT"))
 	handleError(err)
 
 	defer client.Close()
